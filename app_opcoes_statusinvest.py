@@ -46,14 +46,13 @@ def extrair_strike_statusinvest(ativo):
             return "N/D"
         for tr in tabela.find_all("tr"):
             cols = [c.get_text(strip=True) for c in tr.find_all("td")]
-            if cols and ativo in cols[0]:
-                strike = cols[2].replace("R$", "").replace(".", "").replace(",", ".")
-                return float(strike)
-    except Exception:
+            if len(cols) >= 3 and ativo in cols[0]:
+                return cols[2].replace("R$", "").replace(".", "").replace(",", ".")
+    except:
         return "Erro"
     return "N/D"
 
-st.title("Classificador de Opções B3 com Strike (StatusInvest)")
+st.title("Classificador de Opções B3 com Strike (Preço de Exercício - StatusInvest)")
 
 uploaded_files = st.file_uploader("📤 Envie um ou mais arquivos CSV com os ativos", type="csv", accept_multiple_files=True)
 if uploaded_files:
@@ -74,4 +73,4 @@ if uploaded_files:
         st.success("✅ Arquivos processados com sucesso!")
         st.dataframe(full_df)
         csv = full_df.to_csv(index=False).encode("utf-8")
-        st.download_button("📥 Baixar arquivo com Strike", data=csv, file_name="ativos_com_strike.csv", mime="text/csv")
+        st.download_button("📥 Baixar arquivo com Strike (Preço de Exercício)", data=csv, file_name="ativos_com_strike.csv", mime="text/csv")
