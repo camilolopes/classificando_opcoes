@@ -11,11 +11,14 @@ letra_mes_put  = {l: m for l, m in zip("MNOPQRSTUVWX", range(1,13))}
 def terceira_sexta_feira(ano, mes):
     dia, contador = 1, 0
     while dia <= 31:
-        dt = datetime(ano, mes, dia)
-        if dt.weekday() == 4:
-            contador += 1
-            if contador == 3:
-                return dt
+        try:
+            dt = datetime(ano, mes, dia)
+            if dt.weekday() == 4:
+                contador += 1
+                if contador == 3:
+                    return dt
+        except:
+            break
         dia += 1
     return None
 
@@ -35,25 +38,24 @@ def vencimento_opcao_b3(ativo):
     dt = terceira_sexta_feira(ano, mes)
     return dt.strftime("%d/%m/%Y") if dt else "N/A"
 
-def extrair_strike_statusinvest(ativo):
-    base = ''.join(filter(str.isalpha, ativo[:-5]))
-    url = f"https://statusinvest.com.br/opcoes/{base}"
+def extrair_strike_opcoesnet(ativo):
+    base = ''.join(filter(str.isalpha, ativo[:-5]))  # Ex: PETRM218 -> PETR
+    url = f"https://opcoes.net.br/opcoes/bovespa/{base}"
     try:
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        resp = requests.get(url, timeout=10)
+        soup = BeautifulSoup(resp.text, 'html.parser')
         tabela = soup.find("table")
         if not tabela:
             return "N/D"
         for linha in tabela.find_all("tr"):
             colunas = [td.get_text(strip=True) for td in linha.find_all("td")]
-            if len(colunas) >= 3 and ativo.upper() in colunas[0].upper():
-                valor_strike = colunas[2].replace("R$", "").replace(".", "").replace(",", ".")
-                return float(valor_strike)
+            if len(colunas) >= 2 and ativo.upper() == colunas[0].upper():
+                return colunas[1].replace("R$", "").replace(".", "").replace(",", ".")
     except:
         return "Erro"
     return "N/D"
 
-st.title("📊 Classificador de Opções B3 com Strike via StatusInvest")
+st.title("📊 Classificador de Opções B3 com Strike (Preço de Exercício) via Opcoes.net.br")
 
 uploaded_files = st.file_uploader("📤 Envie um ou mais arquivos CSV com os ativos", type="csv", accept_multiple_files=True)
 if uploaded_files:
@@ -70,8 +72,8 @@ if uploaded_files:
         with st.spinner("🔍 Processando ativos..."):
             full_df["Tipo de Opção"] = full_df["Ativo"].apply(lambda x: classificar_tipo_opcao(x[4].upper()) if len(x) >= 5 else "DESCONHECIDO")
             full_df["Data de Vencimento"] = full_df["Ativo"].apply(vencimento_opcao_b3)
-            full_df["Strike"] = full_df["Ativo"].apply(extrair_strike_statusinvest)
+            full_df["Strike"] = full_df["Ativo"].apply(extrair_strike_opcoesnet)
         st.success("✅ Arquivos processados com sucesso!")
         st.dataframe(full_df)
         csv = full_df.to_csv(index=False).encode("utf-8")
-        st.download_button("📥 Baixar arquivo com Strike", data=csv, file_name="ativos_com_strike_corrigido.csv", mime="text/csv")
+        st.download_button("📥 Baixar arquivo com Strike (opcoes.net.br)", data=csv, file_name="ativos_com_strike_opcoesnet.csv", mime="text/csv")
