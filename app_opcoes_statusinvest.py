@@ -39,20 +39,21 @@ def extrair_strike_statusinvest(ativo):
     base = ''.join(filter(str.isalpha, ativo[:-5]))
     url = f"https://statusinvest.com.br/opcoes/{base}"
     try:
-        resp = requests.get(url, timeout=10)
-        soup = BeautifulSoup(resp.text, "html.parser")
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
         tabela = soup.find("table")
         if not tabela:
             return "N/D"
-        for tr in tabela.find_all("tr"):
-            cols = [c.get_text(strip=True) for c in tr.find_all("td")]
-            if len(cols) >= 3 and ativo in cols[0]:
-                return cols[2].replace("R$", "").replace(".", "").replace(",", ".")
+        for linha in tabela.find_all("tr"):
+            colunas = [td.get_text(strip=True) for td in linha.find_all("td")]
+            if len(colunas) >= 3 and ativo.upper() in colunas[0].upper():
+                valor_strike = colunas[2].replace("R$", "").replace(".", "").replace(",", ".")
+                return float(valor_strike)
     except:
         return "Erro"
     return "N/D"
 
-st.title("Classificador de Opções B3 com Strike (Preço de Exercício - StatusInvest)")
+st.title("📊 Classificador de Opções B3 com Strike via StatusInvest")
 
 uploaded_files = st.file_uploader("📤 Envie um ou mais arquivos CSV com os ativos", type="csv", accept_multiple_files=True)
 if uploaded_files:
@@ -73,4 +74,4 @@ if uploaded_files:
         st.success("✅ Arquivos processados com sucesso!")
         st.dataframe(full_df)
         csv = full_df.to_csv(index=False).encode("utf-8")
-        st.download_button("📥 Baixar arquivo com Strike (Preço de Exercício)", data=csv, file_name="ativos_com_strike.csv", mime="text/csv")
+        st.download_button("📥 Baixar arquivo com Strike", data=csv, file_name="ativos_com_strike_corrigido.csv", mime="text/csv")
