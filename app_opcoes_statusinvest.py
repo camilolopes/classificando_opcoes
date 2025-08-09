@@ -38,7 +38,7 @@ def vencimento_opcao_b3(ativo):
 
 st.title("📊 Classificador de Opções B3 (sem strike)")
 
-uploaded_files = st.file_uploader("📤 Envie um ou mais arquivos CSV com os ativos", type="csv", accept_multiple_files=True)
+uploaded_files = st.file_uploader("📤 Envie um ou mais arquivos CSV com ativos", type="csv", accept_multiple_files=True)
 if uploaded_files:
     dfs = []
     for uploaded_file in uploaded_files:
